@@ -218,6 +218,3 @@ namespace JourneyLauncher {
   }
  }
 }
-
-
-

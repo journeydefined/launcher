@@ -87,6 +87,3 @@ namespace JourneyLauncher {
   class QuietProgress:IProgress<Transfer>{public void Report(Transfer t){}}
  }
 }
-
-
-

@@ -60,4 +60,3 @@ export async function saveInvitation(path, invitation) {
   await mkdir(dirname(resolve(path)), { recursive: true, mode: 0o700 });
   await writeFile(path, JSON.stringify(invitation, null, 2), { flag: 'wx', mode: 0o600 });
 }
-

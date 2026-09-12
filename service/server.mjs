@@ -12,4 +12,3 @@ server.maxConnections = 256;
 server.requestTimeout = 120000; server.headersTimeout = 15000; server.maxRequestsPerSocket = 1000;
 server.listen(Number(process.env.PORT ?? 8788), host, () => console.log(`Private release service listening on ${host}:${server.address().port}.`));
 for(const signal of ['SIGTERM','SIGINT'])process.on(signal, () => { server.close(() => { service.close(); process.exit(0); }); setTimeout(() => process.exit(1), 10000).unref(); });
-

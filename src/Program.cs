@@ -166,9 +166,3 @@ namespace JourneyLauncher {
   static TextBox Field(Panel panel,string title,string value){panel.Children.Add(new TextBlock {Text=title,Margin=new Thickness(0,0,0,5)});var box=new TextBox {Text=value??"",Padding=new Thickness(8)};panel.Children.Add(box);return box;}
  }
 }
-
-
-
-
-
-

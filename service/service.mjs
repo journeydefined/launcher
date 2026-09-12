@@ -164,4 +164,3 @@ export async function createService({ dataDir, adminToken, publicOrigin, now = D
     handle: (req, res) => { route(req, res).catch(error => { if (res.headersSent || res.destroyed) { res.destroy(); return; } respond(res, error.status ?? 500, { error: error.status ? error.message : 'The service could not complete this request.' }); }); }
   };
 }
-
