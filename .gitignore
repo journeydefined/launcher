@@ -1,0 +1,13 @@
+/private/
+/out/
+/artifacts/
+*.user
+*.log
+/LOCAL_SETUP.md
+*.invite.json
+*.key
+*.pem
+.env
+.env.*
+*.sqlite*
+/node_modules/
