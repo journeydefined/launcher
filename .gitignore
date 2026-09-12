@@ -17,3 +17,6 @@
 *.tpz
 *.pfx
 *.p12
+/.wrangler/
+/.dev.vars
+/.dev.vars.*

@@ -16,6 +16,7 @@ while($true){
  Write-Host '5  Activate a release / roll back'
  Write-Host '6  List releases'
  Write-Host '7  View recent owner actions'
+ Write-Host '8  Initialize Cloudflare database (first setup)'
  Write-Host '0  Exit'
  $choice=Read-Host 'Choose'
  switch($choice){
@@ -26,6 +27,7 @@ while($true){
   '5' {$version=Read-Host 'Verified version to activate'; & $nodePath "$repo\service\owner.mjs" activate @common --version $version}
   '6' {& $nodePath "$repo\service\owner.mjs" releases @common}
   '7' {& $nodePath "$repo\service\owner.mjs" audit @common}
+  '8' {& $nodePath "$repo\service\owner.mjs" bootstrap @common}
   '0' {return}
  }
 }

@@ -1,0 +1,23 @@
+{
+  "devDependencies": {
+    "wrangler": "4.131.1",
+    "miniflare": "5.20260911.0-alpha",
+    "esbuild": "0.28.1"
+  },
+  "name": "journey-launcher-backend",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "test": "node --test cloudflare/tests/*.test.mjs",
+    "check:worker": "wrangler deploy --dry-run --outdir out/worker",
+    "db:migrate": "wrangler d1 migrations apply jdc-launcher --remote"
+  },
+  "dependencies": {
+    "@noble/hashes": "2.4.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

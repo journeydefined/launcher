@@ -1,0 +1,20 @@
+name = "launcher"
+main = "cloudflare/worker.mjs"
+compatibility_date = "2026-09-01"
+workers_dev = true
+preview_urls = false
+
+[[d1_databases]]
+binding = "DB"
+database_name = "jdc-launcher"
+database_id = "65e9238b-59a3-4996-ad39-c6f2775ad126"
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "BUILDS"
+bucket_name = "jdc-game-builds"
+
+[[rules]]
+type = "Text"
+globs = ["**/*.sql"]
+fallthrough = true

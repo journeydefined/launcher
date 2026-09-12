@@ -1,4 +1,6 @@
-# Private release service
+# Optional Node release service
+
+**The default deployment now uses [Cloudflare Workers + D1 + R2](../cloudflare/README.md).** This document describes the retained Node/local-disk alternative. Owner Desk and its CLI work with either backend; choose option 8 only for first-time Cloudflare database setup.
 
 The service and owner tools are implemented and tested. **No internet deployment has been created.** A live hostname and server remain to be supplied. The existing Journey Defined website and Cloudflare Worker are separate and must remain unchanged.
 

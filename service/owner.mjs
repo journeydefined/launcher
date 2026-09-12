@@ -13,7 +13,8 @@ try {
     console.log('Owner key generated in the specified private file. Keep it off Git and share it only with the service administrator.');
   } else {
     const api = client({ url: required('url'), key: (await readFile(required('key-file'),'utf8')).trim() });
-    if(command === 'invite') {
+    if(command === 'bootstrap') console.log(JSON.stringify(await api('POST','/admin/bootstrap')));
+    else if(command === 'invite') {
       const out = required('out'); const invitation = await api('POST','/admin/testers',{ name:required('name'), days:Number(options.days ?? 30) });
       try { await saveInvitation(out,invitation); } catch(error) { await api('DELETE',`/admin/testers/${invitation.testerId}`); throw error; }
       console.log(`Invitation saved to ${resolve(out)}. Expires ${new Date(invitation.expires).toISOString()}. Transfer this file privately; it grants game access.`);
@@ -26,8 +27,8 @@ try {
     else if(command === 'audit') console.log(JSON.stringify(await api('GET','/admin/audit'),null,2));
     else if(command === 'publish') {
       let last = -1;
-      const result=await publish({api,manifestPath:resolve(required('manifest')),activate:options.activate===true,onProgress:(done,total)=>{const percent=Math.floor(done*100/total);if(percent!==last){console.log(`Uploaded ${percent}%`);last=percent;}}});
+      const result=await publish({api,manifestPath:resolve(required('manifest')),activate:options.activate===true,onVerification:(done,total)=>{console.log(`Verifying ${Math.floor(done*100/total)}%`);},onProgress:(done,total)=>{const percent=Math.floor(done*100/total);if(percent!==last){console.log(`Uploaded ${percent}%`);last=percent;}}});
       console.log(JSON.stringify(result));
-    } else throw new Error('Commands: init, invite, testers, revoke, publish, releases, activate, uploads, discard-upload, audit. See service/README.md.');
+    } else throw new Error('Commands: init, bootstrap, invite, testers, revoke, publish, releases, activate, uploads, discard-upload, audit. See service/README.md.');
   }
 } catch(error) { console.error(error.message); process.exitCode=1; }

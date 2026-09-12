@@ -18,11 +18,15 @@ For private testing, choose **Settings → Import tester invitation**, review th
 
 For a local preview, select a release JSON file as the feed, or use **Link existing game** to select an executable. Linked games are never overwritten. An optional `out/bootstrap.json` can provide `{ "Feed": "absolute local manifest path or HTTPS URL" }` for first use. This machine-specific file is excluded from the repository.
 
+## Cloudflare deployment
+
+The default backend is now a Cloudflare Worker using the existing private R2 bucket and D1 database. Follow [Cloudflare setup](cloudflare/README.md) for the exact dashboard fields, runtime OWNER_TOKEN secret, authenticated database bootstrap, and first private release. The Windows design and invitation format are unchanged. `npm test` checks the workerd/D1/R2 implementation and `npm run check:worker` validates the deployment bundle.
+
 ## Private distribution and owner workflow
 
 The [private service](service/README.md) is implemented and verified over HTTPS. It supports individual expiring tester keys, revocation, protected manifests and ZIP downloads, resumable chunk uploads, whole-package checksum verification, staged releases, activation/rollback and owner audit records. No hosted account or internet deployment is bundled or claimed.
 
-Open `Owner-Desk.cmd` for the Windows owner menu, or use `service/owner.mjs`. The owner supplies a deployed service address and a private owner-key file. Node.js 24 is required for owner tools and the server. There are no npm dependencies. A [Docker/Caddy deployment](deploy/compose.yaml) is provided for an owner-approved separate server/hostname; it does not change any existing website or domain.
+Open `Owner-Desk.cmd` for the Windows owner menu, or use `service/owner.mjs`. The owner supplies a deployed service address and a private owner-key file. Node.js 24 is required for owner tools and the server. The Cloudflare build dependencies are pinned; the Windows launcher has no npm dependency. An optional [Docker/Caddy deployment](deploy/compose.yaml) remains available for the earlier Node backend; it is not needed for the default Cloudflare deployment.
 
 ## Build and package Warplex AE
 

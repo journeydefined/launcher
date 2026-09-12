@@ -25,7 +25,7 @@ export function client({ url, key, ca }) {
     });
   };
 }
-export async function publish({ api, manifestPath, activate = false, onProgress = () => {} }) {
+export async function publish({ api, manifestPath, activate = false, onProgress = () => {}, onVerification = () => {} }) {
   const input = JSON.parse((await readFile(manifestPath, 'utf8')).replace(/^\uFEFF/, ''));
   const manifest = validateRelease(input);
   if(typeof input.archive !== 'string' || input.archive.includes('://')) throw new Error('Publish a local ZIP archive.');
@@ -52,7 +52,20 @@ export async function publish({ api, manifestPath, activate = false, onProgress 
       }
     }
   } finally { await file.close(); }
-  const result = await api('POST', `/admin/uploads/${upload.id}/complete`);
+  let result;
+  let failures = 0;
+  let lastVerified = -1;
+  while(true) {
+    try {
+      result = await api('POST', `/admin/uploads/${upload.id}/complete`);
+      if(result.verified === true) break;
+      if(result.status !== 'verifying' || !Number.isSafeInteger(result.verifiedBytes) || result.verifiedBytes <= lastVerified || result.verifiedBytes > manifest.size) throw new Error('Invalid verification progress response.');
+      lastVerified = result.verifiedBytes; failures = 0; onVerification(result.verifiedBytes, manifest.size);
+    } catch(error) {
+      if(++failures >= 3 || (error.status && ![409,429,500,502,503,504].includes(error.status))) throw error;
+      await new Promise(resolveDelay => setTimeout(resolveDelay, failures * 1000));
+    }
+  }
   if(activate) await api('PUT', '/admin/channel', { version: manifest.version });
   return { ...result, active: activate };
 }
