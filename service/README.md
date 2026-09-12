@@ -7,7 +7,7 @@ The service and owner tools are implemented and tested. **No internet deployment
 Open `Owner-Desk.cmd` on Windows for a menu, or use the CLI below. It asks for the deployed service's HTTPS address and your private owner-key file. Node.js 24 LTS is required for owner tools and the server; the Windows game launcher itself does not require Node.
 
 1. Package the game with `scripts/package-game.ps1`.
-2. Upload it. The tool verifies the local ZIP, resumes interrupted uploads in 8 MiB chunks, and the service verifies the complete SHA-256 digest. A verified release is initially staged.
+2. Upload it. The tool verifies the local ZIP, resumes interrupted uploads in 8 MiB chunks, and the service verifies the complete SHA-256 digest. A verified release is initially staged and cannot be downloaded by testers until first activation. Previously activated versions remain downloadable to allow in-progress updates and rollback.
 3. Activate the chosen version. Testers see that version on the next launcher startup or update check. Activating an older verified version rolls the channel back; existing packages are immutable.
 4. Issue an invitation for each tester, valid for 1–90 days. Transfer the generated file privately. Testers select **Settings → Import tester invitation → Save settings** in the launcher.
 5. List and revoke testers at any time. Revocation and expiry block subsequent manifest and archive requests. They do not erase downloaded builds or prevent offline play. An already authorized transfer may finish.

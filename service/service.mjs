@@ -46,10 +46,14 @@ export async function createService({ dataDir, adminToken, publicOrigin, now = D
   const db = new DatabaseSync(join(root, 'access.sqlite'));
   db.exec(`PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000;
     CREATE TABLE IF NOT EXISTS testers (id TEXT PRIMARY KEY, name TEXT NOT NULL, token_hash TEXT UNIQUE NOT NULL, expires INTEGER NOT NULL, revoked INTEGER NOT NULL DEFAULT 0, created INTEGER NOT NULL);
-    CREATE TABLE IF NOT EXISTS releases (version TEXT PRIMARY KEY, manifest TEXT NOT NULL, created INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS releases (version TEXT PRIMARY KEY, manifest TEXT NOT NULL, created INTEGER NOT NULL, published INTEGER NOT NULL DEFAULT 0);
     CREATE TABLE IF NOT EXISTS channel (id INTEGER PRIMARY KEY CHECK(id=1), version TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS uploads (id TEXT PRIMARY KEY, version TEXT UNIQUE NOT NULL, manifest TEXT NOT NULL, offset INTEGER NOT NULL DEFAULT 0, created INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS audit (id INTEGER PRIMARY KEY, time INTEGER NOT NULL, action TEXT NOT NULL, subject TEXT NOT NULL);`);
+  if (!db.prepare('PRAGMA table_info(releases)').all().some(column => column.name === 'published')) {
+    db.exec('ALTER TABLE releases ADD COLUMN published INTEGER NOT NULL DEFAULT 0');
+    db.exec('UPDATE releases SET published=1 WHERE version IN (SELECT version FROM channel)');
+  }
   const adminHash = Buffer.from(sha(adminToken), 'hex');
   const locks = new Set(), downloads = new Map(), failures = new Map();
   const audit = (action, subject) => db.prepare('INSERT INTO audit(time,action,subject) VALUES(?,?,?)').run(now(), action, subject);
@@ -87,7 +91,7 @@ export async function createService({ dataDir, adminToken, publicOrigin, now = D
       if (path === '/admin/testers' && method === 'GET') return respond(res, 200, db.prepare('SELECT id,name,expires,revoked,created FROM testers ORDER BY created DESC').all());
       const testerMatch = /^\/admin\/testers\/([0-9a-f-]{36})$/.exec(path);
       if (testerMatch && method === 'DELETE') { const result = db.prepare('UPDATE testers SET revoked=1 WHERE id=?').run(testerMatch[1]); if (!result.changes) fail(404, 'Tester not found.'); audit('tester-revoked', testerMatch[1]); return respond(res, 200, { revoked: true }); }
-      if (path === '/admin/releases' && method === 'GET') return respond(res, 200, { active: db.prepare('SELECT version FROM channel WHERE id=1').get()?.version ?? null, releases: db.prepare('SELECT version,created FROM releases ORDER BY created DESC').all() });
+      if (path === '/admin/releases' && method === 'GET') return respond(res, 200, { active: db.prepare('SELECT version FROM channel WHERE id=1').get()?.version ?? null, releases: db.prepare('SELECT version,created,published FROM releases ORDER BY created DESC').all() });
       if (path === '/admin/releases' && method === 'POST') {
         const manifest = validateRelease(await json(req));
         if (db.prepare('SELECT 1 FROM releases WHERE version=?').get(manifest.version) || db.prepare('SELECT 1 FROM uploads WHERE version=?').get(manifest.version)) fail(409, 'This version already exists. Resume its upload or choose a new version.');
@@ -112,7 +116,6 @@ export async function createService({ dataDir, adminToken, publicOrigin, now = D
           if (bytes.length !== +range[2] - +range[1] + 1 || sha(bytes) !== req.headers['x-chunk-sha256']) fail(400, 'Chunk size or checksum mismatch.');
           const file = await open(join(uploads, id), 'r+');
           try { await file.truncate(upload.offset); let written = 0; while (written < bytes.length) { const result = await file.write(bytes, written, bytes.length - written, upload.offset + written); if (!result.bytesWritten) throw new Error("Disk write made no progress"); written += result.bytesWritten; } await file.sync(); } finally { await file.close(); }
-          // r+ writes start at zero, so explicitly offset-write is used below by the corrected implementation.
           db.prepare('UPDATE uploads SET offset=? WHERE id=?').run(upload.offset + bytes.length, id);
           return respond(res, 200, { id, offset: upload.offset + bytes.length });
         });
@@ -131,7 +134,12 @@ export async function createService({ dataDir, adminToken, publicOrigin, now = D
       }
       if (path === '/admin/channel' && method === 'PUT') {
         const { version } = await json(req); if (typeof version !== 'string' || !db.prepare('SELECT 1 FROM releases WHERE version=?').get(version)) fail(404, 'Verified release not found.');
-        db.prepare('INSERT INTO channel(id,version) VALUES(1,?) ON CONFLICT(id) DO UPDATE SET version=excluded.version').run(version); audit('channel-activated', version);
+        db.exec('BEGIN IMMEDIATE');
+        try {
+          db.prepare('UPDATE releases SET published=1 WHERE version=?').run(version);
+          db.prepare('INSERT INTO channel(id,version) VALUES(1,?) ON CONFLICT(id) DO UPDATE SET version=excluded.version').run(version); audit('channel-activated', version);
+          db.exec('COMMIT');
+        } catch(error) { db.exec('ROLLBACK'); throw error; }
         return respond(res, 200, { active: version });
       }
       if (path === '/admin/audit' && method === 'GET') return respond(res, 200, db.prepare('SELECT time,action,subject FROM audit ORDER BY id DESC LIMIT 100').all());
@@ -145,7 +153,7 @@ export async function createService({ dataDir, adminToken, publicOrigin, now = D
     }
     const archiveMatch = /^\/v1\/games\/warplex-ae\/releases\/([A-Za-z0-9][A-Za-z0-9._-]{0,63})\/archive$/.exec(path);
     if ((method === 'GET' || method === 'HEAD') && archiveMatch) {
-      const row = db.prepare('SELECT manifest FROM releases WHERE version=?').get(archiveMatch[1]); if (!row) fail(404, 'Release not found.');
+      const row = db.prepare('SELECT manifest FROM releases WHERE version=? AND published=1').get(archiveMatch[1]); if (!row) fail(404, 'Release not found.');
       const manifest = JSON.parse(row.manifest), size = manifest.size;
       let start = 0, end = size - 1, status = 200;
       if (req.headers.range) { const range = /^bytes=(\d+)-(\d*)$/.exec(req.headers.range); if (!range || +range[1] >= size || (range[2] && (+range[2] < +range[1] || +range[2] >= size))) { res.setHeader('Content-Range', `bytes */${size}`); fail(416, 'Invalid byte range.'); } start = +range[1]; end = range[2] ? +range[2] : end; status = 206; res.setHeader('Content-Range', `bytes ${start}-${end}/${size}`); }

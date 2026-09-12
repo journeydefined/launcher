@@ -60,6 +60,7 @@ await test('Private distribution over verified local TLS', async t => {
       await writeFile(join(root,'game.zip'),packageBytes);await writeFile(join(root,'release.json'),JSON.stringify(manifest));
       const result=await publish({api,manifestPath:join(root,'release.json')});assert.equal(result.verified,true);assert.equal(result.active,false);
       assert.equal((await call('/v1/games/warplex-ae/release',{token:invitation.token})).status,404);
+      assert.equal((await call('/v1/games/warplex-ae/releases/test-1/archive',{token:invitation.token})).status,404);
       assert.deepEqual(await readFile(join(root,'data','packages','test-1.zip')),packageBytes);
     });
     await t.test('activation exposes only the verified private release and range downloads',async()=>{

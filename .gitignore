@@ -11,3 +11,9 @@
 .env.*
 *.sqlite*
 /node_modules/
+*.zip
+*.pck
+*.exe
+*.tpz
+*.pfx
+*.p12

@@ -14,8 +14,8 @@ $work=Join-Path $repo "private\exports\$Version"
 if(Test-Path -LiteralPath $work){throw 'Export workspace exists. Use a new version to preserve previous builds.'}
 $copy=Join-Path $work 'source';$output=Join-Path $work 'windows'
 New-Item -ItemType Directory -Force $copy,$output | Out-Null
-$excluded=@('.godot','.git','tests','checkpoints','tools','export_templates','feature_profiles','script_templates','text_editor_themes')
-Get-ChildItem -LiteralPath $source -Force | Where-Object {$_.Name -notin $excluded -and -not $_.Name.StartsWith('.') -and ($_.PSIsContainer -or $_.Extension -in '.godot','.tscn','.tres','.gd','.uid','.import')} | ForEach-Object {Copy-Item -LiteralPath $_.FullName -Destination $copy -Recurse}
+$excluded=@('.godot','.git','tests','checkpoints','tools','export_templates','feature_profiles','script_templates','text_editor_themes','backups','exports','build','out','node_modules')
+Get-ChildItem -LiteralPath $source -Force | Where-Object {$_.Name -notin $excluded -and -not $_.Name.StartsWith('.') -and ($_.PSIsContainer -or $_.Extension -notin '.log','.exe','.zip','.pck','.tpz','.md','.bak')} | ForEach-Object {Copy-Item -LiteralPath $_.FullName -Destination $copy -Recurse}
 $project=Join-Path $copy 'project.godot'
 (Get-Content -LiteralPath $project -Raw).Replace('Battle Generals - Battlefield Test','Warplex: After Earth') | Set-Content -LiteralPath $project
 $menu=Join-Path $copy 'scripts\main_menu.gd'

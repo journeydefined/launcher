@@ -3,3 +3,9 @@
 !service/**
 !deploy/
 !deploy/Dockerfile
+**/*.key
+**/*.pem
+**/*.invite.json
+**/.env*
+**/*.sqlite*
+service/tests/
